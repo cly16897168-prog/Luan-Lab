@@ -1,6 +1,6 @@
-# 实验室试剂监控系统 MVP
+# Luan-Lab
 
-这是一个实验室试剂监控系统 MVP。当前版本已经有网页端后端、注册、登录、管理员审批和 PostgreSQL 数据库存储，可作为多人系统的第一版骨架。
+Luan-Lab 是一个面向实验室材料和试剂管理的网页系统。当前版本已经有网页端后端、注册、登录、管理员审批和 PostgreSQL 数据库存储，可作为多人系统的第一版骨架。
 
 ## 使用方式
 
@@ -53,7 +53,7 @@ PGSSL=disable DATABASE_URL="postgres://postgres:password@localhost:5432/lab_reag
 - 用户搜索试剂后输入使用量，系统自动扣减当前余量
 - 允许每个试剂设置不同预警线，并自动识别低库存、30天内到期、已过期和危险品试剂
 - 记录领用和入库流转历史
-- 设置 `DATABASE_URL` 时数据保存在 PostgreSQL；未设置时保存在服务器端 `data/db.json`
+- 设置 `DATABASE_URL` 时数据保存在 PostgreSQL；未设置时数据保存在服务器端 `data/db.json`
 
 ## 多人异地访问版本建议
 
