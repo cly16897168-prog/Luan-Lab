@@ -1,20 +1,210 @@
 const EXPIRING_DAYS = 30;
+const LANGUAGE_KEY = "lab-reagent-language";
 
-const riskLabels = {
-  low: "普通",
-  irritant: "刺激性",
-  flammable: "易燃",
-  corrosive: "腐蚀性",
-  toxic: "有毒",
+const translations = {
+  zh: {
+    appTitle: "实验室试剂监控系统",
+    languageToggle: "English",
+    loadDemo: "载入示例",
+    clearData: "清空数据",
+    logout: "退出登录",
+    authHeadline: "登录后访问实验室试剂库存",
+    authSubhead: "新账号注册后会进入待审批状态，管理员批准后才能登录和修改试剂数据。",
+    login: "登录",
+    registerRequest: "注册申请",
+    email: "邮箱",
+    password: "密码",
+    name: "姓名",
+    namePlaceholder: "例如 王同学",
+    submitRegister: "提交注册申请",
+    registrationApproval: "注册审批",
+    adminOnly: "只有管理员可见",
+    totalReagents: "试剂总数",
+    lowStock: "低库存",
+    expiringSoon: "30天内到期",
+    expired: "已过期",
+    hazardous: "危险品",
+    storageLocations: "存放点",
+    addReagent: "录入试剂",
+    reagentName: "试剂名称",
+    reagentNamePlaceholder: "例如 无水乙醇",
+    cas: "CAS号",
+    casPlaceholder: "例如 64-17-5",
+    catalogNumber: "Catalog Number",
+    batch: "批号",
+    batchPlaceholder: "例如 LOT-2026-0318",
+    totalAmount: "存入总量",
+    currentQuantity: "当前余量",
+    unit: "单位",
+    unitBottle: "瓶",
+    unitBox: "盒",
+    reagentType: "试剂类型",
+    typeSolution: "溶液",
+    typePowder: "粉末",
+    typeSolid: "固体",
+    typeConsumable: "耗材",
+    typeOther: "其他",
+    threshold: "预警线",
+    receivedDate: "入库日期",
+    expiryDate: "有效期",
+    storageLocation: "存储位置",
+    riskLevel: "风险等级",
+    riskLow: "普通",
+    riskIrritant: "刺激性",
+    riskFlammable: "易燃",
+    riskCorrosive: "腐蚀性",
+    riskToxic: "有毒",
+    owner: "负责人",
+    ownerPlaceholder: "例如 陈老师",
+    note: "备注",
+    notePlaceholder: "开封日期、供应商、特殊要求等",
+    submitReagent: "添加试剂",
+    inventoryBoard: "库存看板",
+    searchPlaceholder: "搜索名称、CAS号、Catalog Number、批号或负责人",
+    allLocations: "全部位置",
+    allTypes: "全部类型",
+    allRisks: "全部风险",
+    allStatuses: "全部状态",
+    expiringStatus: "即将到期",
+    statusOk: "状态正常",
+    riskAlerts: "风险告警",
+    history: "流转记录",
+    locationPlaceholder: "例如 有机试剂柜 / 4摄氏度冰箱 / 危化品柜",
+    addLocation: "添加位置",
+    admin: "管理员",
+    member: "成员",
+    updated: "更新",
+    noMatchingReagents: "没有符合条件的试剂。",
+    unassigned: "未分配",
+    expiryPrefix: "有效期",
+    receivedPrefix: "入库",
+    totalStoredPrefix: "存入总量",
+    batchPrefix: "批号",
+    notFilled: "未填",
+    daysExpired: "已过期 {days}天",
+    daysToExpire: "{days}天后到期",
+    lowStockAlert: "库存低于阈值",
+    toxicReview: "有毒试剂需双人复核",
+    normalStatus: "状态正常",
+    consume: "领用",
+    restock: "入库",
+    adjustQuantity: "调整数量",
+    quantityLine: "余量 {quantity} {unit} / 预警线 {threshold} {unit}",
+    noAlerts: "当前没有试剂告警。",
+    noHistory: "还没有领用或入库记录。",
+    remaining: "剩余",
+    unknownUser: "未知用户",
+    noPendingUsers: "当前没有待审批用户。",
+    approve: "批准",
+    speciesCount: "{count}种",
+    pleaseAddLocation: "请先添加存放位置。",
+    registerSubmitted: "注册申请已提交，请等待管理员批准。",
+    confirmReset: "确定清空所有试剂、位置和流转记录吗？",
+    requestFailed: "请求失败",
+  },
+  en: {
+    appTitle: "Lab Reagent Monitoring System",
+    languageToggle: "中文",
+    loadDemo: "Load Demo",
+    clearData: "Clear Data",
+    logout: "Log Out",
+    authHeadline: "Sign in to access lab reagent inventory",
+    authSubhead: "New accounts stay pending until an administrator approves them.",
+    login: "Sign In",
+    registerRequest: "Registration Request",
+    email: "Email",
+    password: "Password",
+    name: "Name",
+    namePlaceholder: "e.g. Alex Wang",
+    submitRegister: "Submit Request",
+    registrationApproval: "Registration Approval",
+    adminOnly: "Visible to administrators only",
+    totalReagents: "Total Reagents",
+    lowStock: "Low Stock",
+    expiringSoon: "Expiring in 30 Days",
+    expired: "Expired",
+    hazardous: "Hazardous",
+    storageLocations: "Storage Locations",
+    addReagent: "Add Reagent",
+    reagentName: "Reagent Name",
+    reagentNamePlaceholder: "e.g. Absolute Ethanol",
+    cas: "CAS Number",
+    casPlaceholder: "e.g. 64-17-5",
+    catalogNumber: "Catalog Number",
+    batch: "Batch / Lot",
+    batchPlaceholder: "e.g. LOT-2026-0318",
+    totalAmount: "Initial Amount",
+    currentQuantity: "Current Quantity",
+    unit: "Unit",
+    unitBottle: "bottle",
+    unitBox: "box",
+    reagentType: "Reagent Type",
+    typeSolution: "Solution",
+    typePowder: "Powder",
+    typeSolid: "Solid",
+    typeConsumable: "Consumable",
+    typeOther: "Other",
+    threshold: "Alert Threshold",
+    receivedDate: "Received Date",
+    expiryDate: "Expiration Date",
+    storageLocation: "Storage Location",
+    riskLevel: "Risk Level",
+    riskLow: "General",
+    riskIrritant: "Irritant",
+    riskFlammable: "Flammable",
+    riskCorrosive: "Corrosive",
+    riskToxic: "Toxic",
+    owner: "Owner",
+    ownerPlaceholder: "e.g. Dr. Chen",
+    note: "Notes",
+    notePlaceholder: "Opened date, supplier, special requirements, etc.",
+    submitReagent: "Add Reagent",
+    inventoryBoard: "Inventory Board",
+    searchPlaceholder: "Search name, CAS, Catalog Number, batch, or owner",
+    allLocations: "All Locations",
+    allTypes: "All Types",
+    allRisks: "All Risks",
+    allStatuses: "All Statuses",
+    expiringStatus: "Expiring Soon",
+    statusOk: "Normal",
+    riskAlerts: "Risk Alerts",
+    history: "Activity History",
+    locationPlaceholder: "e.g. Organic cabinet / 4°C fridge / Hazard cabinet",
+    addLocation: "Add Location",
+    admin: "Admin",
+    member: "Member",
+    updated: "Updated",
+    noMatchingReagents: "No matching reagents.",
+    unassigned: "Unassigned",
+    expiryPrefix: "Expires",
+    receivedPrefix: "Received",
+    totalStoredPrefix: "Initial amount",
+    batchPrefix: "Batch",
+    notFilled: "Not provided",
+    daysExpired: "Expired {days} days",
+    daysToExpire: "Expires in {days} days",
+    lowStockAlert: "Below alert threshold",
+    toxicReview: "Toxic reagent requires dual review",
+    normalStatus: "Normal",
+    consume: "Use",
+    restock: "Restock",
+    adjustQuantity: "Adjust quantity",
+    quantityLine: "Remaining {quantity} {unit} / Alert {threshold} {unit}",
+    noAlerts: "No reagent alerts.",
+    noHistory: "No use or restock records yet.",
+    remaining: "Remaining",
+    unknownUser: "Unknown user",
+    noPendingUsers: "No pending users.",
+    approve: "Approve",
+    speciesCount: "{count} items",
+    pleaseAddLocation: "Please add a storage location first.",
+    registerSubmitted: "Registration request submitted. Please wait for administrator approval.",
+    confirmReset: "Clear all reagents, locations, and activity records?",
+    requestFailed: "Request failed",
+  },
 };
 
-const typeLabels = {
-  solution: "溶液",
-  powder: "粉末",
-  solid: "固体",
-  consumable: "耗材",
-  other: "其他",
-};
+let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || "zh";
 
 let currentUser = null;
 let state = { locations: [], reagents: [], history: [] };
@@ -34,6 +224,7 @@ const els = {
   registerEmail: document.querySelector("#registerEmail"),
   registerPassword: document.querySelector("#registerPassword"),
   logoutBtn: document.querySelector("#logoutBtn"),
+  languageToggle: document.querySelector("#languageToggle"),
   reagentForm: document.querySelector("#reagentForm"),
   reagentName: document.querySelector("#reagentName"),
   reagentCas: document.querySelector("#reagentCas"),
@@ -72,6 +263,50 @@ const els = {
   locationCount: document.querySelector("#locationCount"),
 };
 
+function t(key, params = {}) {
+  const template = translations[currentLanguage][key] || translations.zh[key] || key;
+  return Object.entries(params).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), template);
+}
+
+function riskLabel(value) {
+  return (
+    {
+      low: t("riskLow"),
+      irritant: t("riskIrritant"),
+      flammable: t("riskFlammable"),
+      corrosive: t("riskCorrosive"),
+      toxic: t("riskToxic"),
+    }[value] || t("riskLow")
+  );
+}
+
+function typeLabel(value) {
+  return (
+    {
+      solution: t("typeSolution"),
+      powder: t("typePowder"),
+      solid: t("typeSolid"),
+      consumable: t("typeConsumable"),
+      other: t("typeOther"),
+    }[value] || t("typeOther")
+  );
+}
+
+function applyTranslations() {
+  document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : "en";
+  document.title = t("appTitle");
+  els.languageToggle.textContent = t("languageToggle");
+
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    node.setAttribute("placeholder", t(node.dataset.i18nPlaceholder));
+  });
+  if (currentUser) showApp();
+  if (state.locations) render();
+}
+
 async function api(path, options = {}) {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -79,7 +314,7 @@ async function api(path, options = {}) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || "请求失败");
+    throw new Error(data.error || t("requestFailed"));
   }
   return data;
 }
@@ -93,7 +328,7 @@ function showApp() {
   els.authView.classList.add("is-hidden");
   els.appView.classList.remove("is-hidden");
   document.querySelectorAll(".app-only").forEach((item) => item.classList.remove("is-hidden"));
-  els.currentUser.textContent = `${currentUser.name} · ${currentUser.role === "admin" ? "管理员" : "成员"}`;
+  els.currentUser.textContent = `${currentUser.name} · ${currentUser.role === "admin" ? t("admin") : t("member")}`;
   els.adminPanel.classList.toggle("is-hidden", currentUser.role !== "admin");
 }
 
@@ -136,7 +371,7 @@ function escapeHtml(value) {
 }
 
 function formatTime(value) {
-  return new Intl.DateTimeFormat("zh-CN", {
+  return new Intl.DateTimeFormat(currentLanguage === "zh" ? "zh-CN" : "en-US", {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -145,7 +380,7 @@ function formatTime(value) {
 }
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat("zh-CN", {
+  return new Intl.DateTimeFormat(currentLanguage === "zh" ? "zh-CN" : "en-US", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -160,7 +395,7 @@ function daysUntil(dateValue) {
 }
 
 function getLocationName(locationId) {
-  return state.locations.find((location) => location.id === locationId)?.name || "未分配";
+  return state.locations.find((location) => location.id === locationId)?.name || t("unassigned");
 }
 
 function reagentStatus(reagent) {
@@ -183,14 +418,14 @@ function renderLocationOptions() {
     .join("");
 
   els.reagentLocation.innerHTML = options;
-  els.locationFilter.innerHTML = `<option value="all">全部位置</option>${options}`;
+  els.locationFilter.innerHTML = `<option value="all">${t("allLocations")}</option>${options}`;
 }
 
 function renderLocations() {
   els.locationList.innerHTML = state.locations
     .map((location) => {
       const count = state.reagents.filter((reagent) => reagent.locationId === location.id).length;
-      return `<span class="location-chip">${escapeHtml(location.name)} · ${count}种</span>`;
+      return `<span class="location-chip">${escapeHtml(location.name)} · ${t("speciesCount", { count })}</span>`;
     })
     .join("");
 }
@@ -214,7 +449,7 @@ function renderSummary() {
   els.expiredCount.textContent = stats.expired;
   els.hazardCount.textContent = stats.hazard;
   els.locationCount.textContent = state.locations.length;
-  els.lastUpdated.textContent = `更新 ${formatTime(Date.now())}`;
+  els.lastUpdated.textContent = `${t("updated")} ${formatTime(Date.now())}`;
 }
 
 function getFilteredReagents() {
@@ -232,7 +467,7 @@ function getFilteredReagents() {
         reagent.catalogNumber,
         reagent.batch,
         reagent.owner,
-        reagent.type ? typeLabels[reagent.type] : "",
+        reagent.type ? typeLabel(reagent.type) : "",
         getLocationName(reagent.locationId),
       ]
         .join(" ")
@@ -265,7 +500,7 @@ function getFilteredReagents() {
 function renderBoard() {
   const reagents = getFilteredReagents();
   if (!reagents.length) {
-    els.reagentBoard.innerHTML = `<p class="empty-state">没有符合条件的试剂。</p>`;
+    els.reagentBoard.innerHTML = `<p class="empty-state">${t("noMatchingReagents")}</p>`;
     return;
   }
 
@@ -275,11 +510,11 @@ function renderBoard() {
 function renderReagentCard(reagent) {
   const status = reagentStatus(reagent);
   const tags = [];
-  if (status.isExpired) tags.push(`<span class="tag tag-expired">已过期 ${Math.abs(status.days)}天</span>`);
-  if (!status.isExpired && status.isExpiring) tags.push(`<span class="tag tag-expiring">${status.days}天后到期</span>`);
-  if (status.isLow) tags.push(`<span class="tag tag-low">低库存</span>`);
-  if (isHazardous(reagent)) tags.push(`<span class="tag tag-hazard">${riskLabels[reagent.risk]}</span>`);
-  if (!tags.length) tags.push(`<span class="tag tag-ok">状态正常</span>`);
+  if (status.isExpired) tags.push(`<span class="tag tag-expired">${t("daysExpired", { days: Math.abs(status.days) })}</span>`);
+  if (!status.isExpired && status.isExpiring) tags.push(`<span class="tag tag-expiring">${t("daysToExpire", { days: status.days })}</span>`);
+  if (status.isLow) tags.push(`<span class="tag tag-low">${t("lowStock")}</span>`);
+  if (isHazardous(reagent)) tags.push(`<span class="tag tag-hazard">${riskLabel(reagent.risk)}</span>`);
+  if (!tags.length) tags.push(`<span class="tag tag-ok">${t("normalStatus")}</span>`);
 
   return `
     <article class="reagent-card">
@@ -287,13 +522,13 @@ function renderReagentCard(reagent) {
         <div>
           <div class="reagent-name">${escapeHtml(reagent.name)}</div>
           <div class="reagent-meta">
-            ${escapeHtml(getLocationName(reagent.locationId))} · ${escapeHtml(reagent.owner)} · 有效期 ${formatDate(reagent.expiryDate)}
+            ${escapeHtml(getLocationName(reagent.locationId))} · ${escapeHtml(reagent.owner)} · ${t("expiryPrefix")} ${formatDate(reagent.expiryDate)}
           </div>
           <div class="reagent-meta">
-            ${typeLabels[reagent.type] || "其他"} · 入库 ${formatDate(reagent.receivedDate)} · 存入总量 ${formatNumber(reagent.totalAmount)} ${escapeHtml(reagent.unit)}
+            ${typeLabel(reagent.type)} · ${t("receivedPrefix")} ${formatDate(reagent.receivedDate)} · ${t("totalStoredPrefix")} ${formatNumber(reagent.totalAmount)} ${escapeHtml(reagent.unit)}
           </div>
           <div class="reagent-meta">
-            Catalog ${escapeHtml(reagent.catalogNumber || "未填")} · CAS ${escapeHtml(reagent.cas || "未填")} · 批号 ${escapeHtml(reagent.batch || "未填")}
+            Catalog ${escapeHtml(reagent.catalogNumber || t("notFilled"))} · CAS ${escapeHtml(reagent.cas || t("notFilled"))} · ${t("batchPrefix")} ${escapeHtml(reagent.batch || t("notFilled"))}
           </div>
           ${reagent.note ? `<div class="reagent-note">${escapeHtml(reagent.note)}</div>` : ""}
         </div>
@@ -301,18 +536,18 @@ function renderReagentCard(reagent) {
       </div>
       <div class="reagent-actions">
         <div class="quantity-control">
-          <input data-quantity-input="${reagent.id}" min="0" step="0.01" type="number" value="1" aria-label="调整数量" />
-          <button class="small-button outline-button" type="button" data-consume="${reagent.id}">领用</button>
-          <button class="small-button" type="button" data-restock="${reagent.id}">入库</button>
+          <input data-quantity-input="${reagent.id}" min="0" step="0.01" type="number" value="1" aria-label="${t("adjustQuantity")}" />
+          <button class="small-button outline-button" type="button" data-consume="${reagent.id}">${t("consume")}</button>
+          <button class="small-button" type="button" data-restock="${reagent.id}">${t("restock")}</button>
         </div>
-        <span class="tag">余量 ${formatNumber(reagent.quantity)} ${escapeHtml(reagent.unit)} / 预警线 ${formatNumber(reagent.threshold)} ${escapeHtml(reagent.unit)}</span>
+        <span class="tag">${t("quantityLine", { quantity: formatNumber(reagent.quantity), threshold: formatNumber(reagent.threshold), unit: escapeHtml(reagent.unit) })}</span>
       </div>
     </article>
   `;
 }
 
 function formatNumber(value) {
-  return Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 2 });
+  return Number(value).toLocaleString(currentLanguage === "zh" ? "zh-CN" : "en-US", { maximumFractionDigits: 2 });
 }
 
 function renderAlerts() {
@@ -320,10 +555,10 @@ function renderAlerts() {
     .flatMap((reagent) => {
       const status = reagentStatus(reagent);
       const items = [];
-      if (status.isExpired) items.push({ reagent, label: `已过期 ${Math.abs(status.days)}天`, level: 3 });
-      if (!status.isExpired && status.isExpiring) items.push({ reagent, label: `${status.days}天后到期`, level: 2 });
-      if (status.isLow) items.push({ reagent, label: "库存低于阈值", level: 2 });
-      if (reagent.risk === "toxic") items.push({ reagent, label: "有毒试剂需双人复核", level: 1 });
+      if (status.isExpired) items.push({ reagent, label: t("daysExpired", { days: Math.abs(status.days) }), level: 3 });
+      if (!status.isExpired && status.isExpiring) items.push({ reagent, label: t("daysToExpire", { days: status.days }), level: 2 });
+      if (status.isLow) items.push({ reagent, label: t("lowStockAlert"), level: 2 });
+      if (reagent.risk === "toxic") items.push({ reagent, label: t("toxicReview"), level: 1 });
       return items;
     })
     .sort((a, b) => b.level - a.level || daysUntil(a.reagent.expiryDate) - daysUntil(b.reagent.expiryDate));
@@ -340,7 +575,7 @@ function renderAlerts() {
           `,
         )
         .join("")
-    : `<p class="empty-state">当前没有试剂告警。</p>`;
+    : `<p class="empty-state">${t("noAlerts")}</p>`;
 }
 
 function renderHistory() {
@@ -351,12 +586,12 @@ function renderHistory() {
           (item) => `
             <div class="list-item">
               <strong>${escapeHtml(item.reagentName)}</strong>
-              <span class="muted">${escapeHtml(item.action)} ${formatNumber(item.amount)} ${escapeHtml(item.unit)} · 剩余 ${formatNumber(item.remaining ?? 0)} ${escapeHtml(item.unit)} · ${escapeHtml(item.actorName || "未知用户")} · ${formatTime(item.createdAt)}</span>
+              <span class="muted">${escapeHtml(item.action === "入库" ? t("restock") : t("consume"))} ${formatNumber(item.amount)} ${escapeHtml(item.unit)} · ${t("remaining")} ${formatNumber(item.remaining ?? 0)} ${escapeHtml(item.unit)} · ${escapeHtml(item.actorName || t("unknownUser"))} · ${formatTime(item.createdAt)}</span>
             </div>
           `,
         )
         .join("")
-    : `<p class="empty-state">还没有领用或入库记录。</p>`;
+    : `<p class="empty-state">${t("noHistory")}</p>`;
 }
 
 function render() {
@@ -380,12 +615,12 @@ async function loadPendingUsers() {
                 <strong>${escapeHtml(user.name)}</strong>
                 <span class="muted">${escapeHtml(user.email)} · ${formatTime(user.createdAt)}</span>
               </div>
-              <button class="small-button" type="button" data-approve-user="${user.id}">批准</button>
+              <button class="small-button" type="button" data-approve-user="${user.id}">${t("approve")}</button>
             </div>
           `,
         )
         .join("")
-    : `<p class="empty-state">当前没有待审批用户。</p>`;
+    : `<p class="empty-state">${t("noPendingUsers")}</p>`;
 }
 
 async function addReagent(reagent) {
@@ -441,7 +676,7 @@ els.registerForm.addEventListener("submit", async (event) => {
       }),
     });
     els.registerForm.reset();
-    setAuthMessage("注册申请已提交，请等待管理员批准。");
+    setAuthMessage(t("registerSubmitted"));
   } catch (error) {
     setAuthMessage(error.message, true);
   }
@@ -472,7 +707,7 @@ els.locationForm.addEventListener("submit", async (event) => {
 els.reagentForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!state.locations.length) {
-    alert("请先添加存放位置。");
+    alert(t("pleaseAddLocation"));
     return;
   }
 
@@ -524,11 +759,19 @@ els.seedDemoBtn.addEventListener("click", async () => {
 });
 
 els.resetBtn.addEventListener("click", async () => {
-  const confirmed = confirm("确定清空所有试剂、位置和流转记录吗？");
+  const confirmed = confirm(t("confirmReset"));
   if (!confirmed) return;
   await api("/api/reset", { method: "POST", body: "{}" });
   await refreshData();
 });
 
+els.languageToggle.addEventListener("click", () => {
+  currentLanguage = currentLanguage === "zh" ? "en" : "zh";
+  localStorage.setItem(LANGUAGE_KEY, currentLanguage);
+  applyTranslations();
+  if (currentUser?.role === "admin") loadPendingUsers();
+});
+
+applyTranslations();
 showAuth();
 loadSession();
