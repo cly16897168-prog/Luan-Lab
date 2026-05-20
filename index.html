@@ -15,8 +15,6 @@
       <div class="topbar-actions">
         <span id="currentUser" class="user-badge"></span>
         <button id="languageToggle" class="outline-button" type="button">English</button>
-        <button id="seedDemoBtn" class="ghost-button app-only" type="button" data-i18n="loadDemo">载入示例</button>
-        <button id="resetBtn" class="danger-button app-only" type="button" data-i18n="clearData">清空数据</button>
         <button id="logoutBtn" class="outline-button app-only" type="button" data-i18n="logout">退出登录</button>
       </div>
     </header>
@@ -69,6 +67,15 @@
     </main>
 
     <main id="appView" class="layout is-hidden">
+      <nav class="app-nav" aria-label="Application sections">
+        <button class="nav-tab is-active" type="button" data-view-target="dashboard" data-i18n="navDashboard">看板</button>
+        <button class="nav-tab" type="button" data-view-target="reagents" data-i18n="navReagents">试剂查看</button>
+        <button class="nav-tab" type="button" data-view-target="reports" data-i18n="navReports">报表</button>
+        <button class="nav-tab" type="button" data-view-target="entry" data-i18n="navEntry">试剂录入</button>
+        <button class="nav-tab" type="button" data-view-target="records" data-i18n="navRecords">使用记录</button>
+        <button class="nav-tab" type="button" data-view-target="settings" data-i18n="navSettings">设置</button>
+      </nav>
+
       <section id="adminPanel" class="panel is-hidden">
         <div class="section-header">
           <h2 data-i18n="registrationApproval">注册审批</h2>
@@ -77,35 +84,107 @@
         <div id="pendingUsers" class="list"></div>
       </section>
 
-      <section class="summary-panel" aria-label="试剂总览">
-        <div class="metric">
-          <span class="metric-value" id="totalReagents">0</span>
-          <span class="metric-label" data-i18n="totalReagents">试剂总数</span>
-        </div>
-        <div class="metric metric-low">
-          <span class="metric-value" id="lowStockCount">0</span>
-          <span class="metric-label" data-i18n="lowStock">低库存</span>
-        </div>
-        <div class="metric metric-expiring">
-          <span class="metric-value" id="expiringCount">0</span>
-          <span class="metric-label" data-i18n="expiringSoon">30天内到期</span>
-        </div>
-        <div class="metric metric-expired">
-          <span class="metric-value" id="expiredCount">0</span>
-          <span class="metric-label" data-i18n="expired">已过期</span>
-        </div>
-        <div class="metric metric-hazard">
-          <span class="metric-value" id="hazardCount">0</span>
-          <span class="metric-label" data-i18n="hazardous">危险品</span>
-        </div>
-        <div class="metric">
-          <span class="metric-value" id="locationCount">0</span>
-          <span class="metric-label" data-i18n="storageLocations">存放点</span>
-        </div>
+      <section class="app-view" data-view="dashboard">
+        <section class="summary-panel" aria-label="试剂总览">
+          <div class="metric">
+            <span class="metric-value" id="totalReagents">0</span>
+            <span class="metric-label" data-i18n="totalReagents">试剂总数</span>
+          </div>
+          <div class="metric metric-low">
+            <span class="metric-value" id="lowStockCount">0</span>
+            <span class="metric-label" data-i18n="lowStock">低库存</span>
+          </div>
+          <div class="metric metric-expiring">
+            <span class="metric-value" id="expiringCount">0</span>
+            <span class="metric-label" data-i18n="expiringSoon">30天内到期</span>
+          </div>
+          <div class="metric metric-expired">
+            <span class="metric-value" id="expiredCount">0</span>
+            <span class="metric-label" data-i18n="expired">已过期</span>
+          </div>
+          <div class="metric metric-hazard">
+            <span class="metric-value" id="hazardCount">0</span>
+            <span class="metric-label" data-i18n="hazardous">危险品</span>
+          </div>
+          <div class="metric">
+            <span class="metric-value" id="locationCount">0</span>
+            <span class="metric-label" data-i18n="storageLocations">存放点</span>
+          </div>
+        </section>
+
+        <section class="split-grid">
+          <div class="panel">
+            <div class="section-header">
+              <h2 data-i18n="riskAlerts">风险告警</h2>
+              <span id="lastUpdated" class="muted"></span>
+            </div>
+            <div id="alertList" class="list"></div>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <h2 data-i18n="reagentCategories">试剂分类</h2>
+            </div>
+            <div id="typeSummary" class="category-grid"></div>
+          </div>
+        </section>
       </section>
 
-      <section class="workspace">
-        <aside class="panel">
+      <section class="app-view is-hidden" data-view="reagents">
+        <section class="panel">
+          <div class="section-header">
+            <h2 data-i18n="inventoryBoard">库存看板</h2>
+          </div>
+          <div class="filters" aria-label="筛选试剂">
+            <input id="searchInput" type="search" placeholder="搜索名称、CAS号、Catalog Number、批号或负责人" data-i18n-placeholder="searchPlaceholder" />
+            <select id="locationFilter"></select>
+            <select id="typeFilter">
+              <option value="all" data-i18n="allTypes">全部类型</option>
+              <option value="solution" data-i18n="typeSolution">溶液</option>
+              <option value="powder" data-i18n="typePowder">粉末</option>
+              <option value="solid" data-i18n="typeSolid">固体</option>
+              <option value="consumable" data-i18n="typeConsumable">耗材</option>
+              <option value="other" data-i18n="typeOther">其他</option>
+            </select>
+            <select id="riskFilter">
+              <option value="all" data-i18n="allRisks">全部风险</option>
+              <option value="low" data-i18n="riskLow">普通</option>
+              <option value="irritant" data-i18n="riskIrritant">刺激性</option>
+              <option value="flammable" data-i18n="riskFlammable">易燃</option>
+              <option value="corrosive" data-i18n="riskCorrosive">腐蚀性</option>
+              <option value="toxic" data-i18n="riskToxic">有毒</option>
+            </select>
+            <select id="statusFilter">
+              <option value="all" data-i18n="allStatuses">全部状态</option>
+              <option value="low" data-i18n="lowStock">低库存</option>
+              <option value="expiring" data-i18n="expiringStatus">即将到期</option>
+              <option value="expired" data-i18n="expired">已过期</option>
+              <option value="ok" data-i18n="statusOk">状态正常</option>
+            </select>
+          </div>
+          <div id="reagentBoard" class="reagent-board"></div>
+        </section>
+      </section>
+
+      <section class="app-view is-hidden" data-view="reports">
+        <section class="split-grid">
+          <div class="panel">
+            <div class="section-header">
+              <h2 data-i18n="weeklyReport">每周使用情况</h2>
+            </div>
+            <div id="weeklyReport" class="report-list"></div>
+          </div>
+          <div class="panel">
+            <div class="section-header">
+              <h2 data-i18n="monthlyReport">每月使用情况</h2>
+            </div>
+            <div id="monthlyReport" class="report-list"></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="app-view is-hidden" data-view="entry">
+        <section class="panel">
           <div class="section-header">
             <h2 data-i18n="addReagent">录入试剂</h2>
           </div>
@@ -199,71 +278,51 @@
             </label>
             <button type="submit" data-i18n="submitReagent">添加试剂</button>
           </form>
-        </aside>
-
-        <section class="content-stack">
-          <section class="panel">
-            <div class="section-header">
-              <h2 data-i18n="inventoryBoard">库存看板</h2>
-              <span id="lastUpdated" class="muted"></span>
-            </div>
-            <div class="filters" aria-label="筛选试剂">
-              <input id="searchInput" type="search" placeholder="搜索名称、CAS号、Catalog Number、批号或负责人" data-i18n-placeholder="searchPlaceholder" />
-              <select id="locationFilter"></select>
-              <select id="typeFilter">
-                <option value="all" data-i18n="allTypes">全部类型</option>
-                <option value="solution" data-i18n="typeSolution">溶液</option>
-                <option value="powder" data-i18n="typePowder">粉末</option>
-                <option value="solid" data-i18n="typeSolid">固体</option>
-                <option value="consumable" data-i18n="typeConsumable">耗材</option>
-                <option value="other" data-i18n="typeOther">其他</option>
-              </select>
-              <select id="riskFilter">
-                <option value="all" data-i18n="allRisks">全部风险</option>
-                <option value="low" data-i18n="riskLow">普通</option>
-                <option value="irritant" data-i18n="riskIrritant">刺激性</option>
-                <option value="flammable" data-i18n="riskFlammable">易燃</option>
-                <option value="corrosive" data-i18n="riskCorrosive">腐蚀性</option>
-                <option value="toxic" data-i18n="riskToxic">有毒</option>
-              </select>
-              <select id="statusFilter">
-                <option value="all" data-i18n="allStatuses">全部状态</option>
-                <option value="low" data-i18n="lowStock">低库存</option>
-                <option value="expiring" data-i18n="expiringStatus">即将到期</option>
-                <option value="expired" data-i18n="expired">已过期</option>
-                <option value="ok" data-i18n="statusOk">状态正常</option>
-              </select>
-            </div>
-            <div id="reagentBoard" class="reagent-board"></div>
-          </section>
-
-          <section class="split-grid">
-            <div class="panel">
-              <div class="section-header">
-                <h2 data-i18n="riskAlerts">风险告警</h2>
-              </div>
-              <div id="alertList" class="list"></div>
-            </div>
-
-            <div class="panel">
-              <div class="section-header">
-                <h2 data-i18n="history">流转记录</h2>
-              </div>
-              <div id="historyList" class="list"></div>
-            </div>
-          </section>
         </section>
       </section>
 
-      <section class="panel">
-        <div class="section-header">
-          <h2 data-i18n="storageLocations">存放位置</h2>
-        </div>
-        <form id="locationForm" class="inline-form">
-          <input id="locationName" type="text" placeholder="例如 有机试剂柜 / 4摄氏度冰箱 / 危化品柜" data-i18n-placeholder="locationPlaceholder" required />
-          <button type="submit" data-i18n="addLocation">添加位置</button>
-        </form>
-        <div id="locationList" class="location-list"></div>
+      <section class="app-view is-hidden" data-view="records">
+        <section class="panel">
+          <div class="section-header">
+            <h2 data-i18n="history">流转记录</h2>
+          </div>
+          <div id="historyList" class="list"></div>
+        </section>
+      </section>
+
+      <section class="app-view is-hidden" data-view="settings">
+        <section class="split-grid">
+          <div class="panel">
+            <div class="section-header">
+              <h2 data-i18n="settingsLanguage">语言设置</h2>
+            </div>
+            <button id="settingsLanguageToggle" class="outline-button" type="button">English</button>
+          </div>
+
+          <div class="panel">
+            <div class="section-header">
+              <h2 data-i18n="dataRecovery">数据恢复</h2>
+              <span class="muted" data-i18n="adminOnly">只有管理员可见</span>
+            </div>
+            <div id="backupTools" class="form">
+              <button id="createBackupBtn" type="button" data-i18n="createBackup">创建备份</button>
+              <button id="seedDemoBtn" class="ghost-button" type="button" data-i18n="loadDemo">载入示例</button>
+              <button id="resetBtn" class="danger-button" type="button" data-i18n="clearData">清空数据</button>
+              <div id="backupList" class="list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-header">
+            <h2 data-i18n="storageLocations">存放位置</h2>
+          </div>
+          <form id="locationForm" class="inline-form">
+            <input id="locationName" type="text" placeholder="例如 有机试剂柜 / 4摄氏度冰箱 / 危化品柜" data-i18n-placeholder="locationPlaceholder" required />
+            <button type="submit" data-i18n="addLocation">添加位置</button>
+          </form>
+          <div id="locationList" class="location-list"></div>
+        </section>
       </section>
     </main>
 

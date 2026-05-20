@@ -84,6 +84,30 @@ h2 {
   padding: 22px;
 }
 
+.app-nav {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nav-tab {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: #334155;
+}
+
+.nav-tab:hover,
+.nav-tab.is-active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.app-view {
+  display: grid;
+  gap: 18px;
+}
+
 .auth-layout {
   margin: 0 auto;
   max-width: 1120px;
@@ -420,6 +444,59 @@ button:hover {
   font-size: 13px;
   font-weight: 700;
   padding: 7px 10px;
+}
+
+.category-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.category-card {
+  align-items: flex-start;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--text);
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  min-height: 84px;
+}
+
+.category-card:hover {
+  background: #f7fafc;
+  color: var(--text);
+}
+
+.category-card strong {
+  font-size: 26px;
+}
+
+.report-list {
+  display: grid;
+  gap: 12px;
+}
+
+.report-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.report-card h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.report-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding-top: 8px;
 }
 
 @media (max-width: 1080px) {

@@ -101,6 +101,30 @@ const translations = {
     registerSubmitted: "注册申请已提交，请等待管理员批准。",
     confirmReset: "确定清空所有试剂、位置和流转记录吗？",
     requestFailed: "请求失败",
+    navDashboard: "看板",
+    navReagents: "试剂查看",
+    navReports: "报表",
+    navEntry: "试剂录入",
+    navRecords: "使用记录",
+    navSettings: "设置",
+    reagentCategories: "试剂分类",
+    weeklyReport: "每周使用情况",
+    monthlyReport: "每月使用情况",
+    settingsLanguage: "语言设置",
+    dataRecovery: "数据恢复",
+    createBackup: "创建备份",
+    restoreBackup: "恢复",
+    noBackups: "还没有备份。",
+    backupCreated: "备份已创建。",
+    confirmRestore: "确定恢复到这个备份吗？当前数据会先自动备份。",
+    reportEmpty: "还没有使用记录。",
+    reportTotal: "总用量",
+    loc4cShelf: "4度冰箱 {n}层",
+    loc4cDoor: "4度冰箱门 {n}层",
+    loc20Shelf: "-20度冰箱 {n}层",
+    loc80Shelf: "-80度冰箱 {n}层",
+    locCabinet1: "存储柜1 {n}层",
+    locCabinet2: "存储柜2 {n}层",
   },
   en: {
     appTitle: "Lab Reagent Monitoring System",
@@ -201,6 +225,30 @@ const translations = {
     registerSubmitted: "Registration request submitted. Please wait for administrator approval.",
     confirmReset: "Clear all reagents, locations, and activity records?",
     requestFailed: "Request failed",
+    navDashboard: "Dashboard",
+    navReagents: "Reagents",
+    navReports: "Reports",
+    navEntry: "Reagent Entry",
+    navRecords: "Usage Records",
+    navSettings: "Settings",
+    reagentCategories: "Reagent Categories",
+    weeklyReport: "Weekly Usage",
+    monthlyReport: "Monthly Usage",
+    settingsLanguage: "Language",
+    dataRecovery: "Data Recovery",
+    createBackup: "Create Backup",
+    restoreBackup: "Restore",
+    noBackups: "No backups yet.",
+    backupCreated: "Backup created.",
+    confirmRestore: "Restore this backup? Current data will be backed up first.",
+    reportEmpty: "No usage records yet.",
+    reportTotal: "Total used",
+    loc4cShelf: "4C fridge shelf {n}",
+    loc4cDoor: "4C fridge door shelf {n}",
+    loc20Shelf: "-20C freezer shelf {n}",
+    loc80Shelf: "-80C freezer shelf {n}",
+    locCabinet1: "Storage cabinet 1 shelf {n}",
+    locCabinet2: "Storage cabinet 2 shelf {n}",
   },
 };
 
@@ -255,6 +303,15 @@ const els = {
   lastUpdated: document.querySelector("#lastUpdated"),
   seedDemoBtn: document.querySelector("#seedDemoBtn"),
   resetBtn: document.querySelector("#resetBtn"),
+  navTabs: document.querySelectorAll("[data-view-target]"),
+  appViews: document.querySelectorAll("[data-view]"),
+  typeSummary: document.querySelector("#typeSummary"),
+  weeklyReport: document.querySelector("#weeklyReport"),
+  monthlyReport: document.querySelector("#monthlyReport"),
+  settingsLanguageToggle: document.querySelector("#settingsLanguageToggle"),
+  backupTools: document.querySelector("#backupTools"),
+  createBackupBtn: document.querySelector("#createBackupBtn"),
+  backupList: document.querySelector("#backupList"),
   totalReagents: document.querySelector("#totalReagents"),
   lowStockCount: document.querySelector("#lowStockCount"),
   expiringCount: document.querySelector("#expiringCount"),
@@ -262,6 +319,8 @@ const els = {
   hazardCount: document.querySelector("#hazardCount"),
   locationCount: document.querySelector("#locationCount"),
 };
+
+let activeView = "dashboard";
 
 function t(key, params = {}) {
   const template = translations[currentLanguage][key] || translations.zh[key] || key;
@@ -292,10 +351,29 @@ function typeLabel(value) {
   );
 }
 
+function locationLabel(location) {
+  const id = typeof location === "string" ? location : location?.id;
+  const fallback = typeof location === "string" ? location : location?.name;
+  const patterns = [
+    [/^loc-fridge-4c-shelf-(\d+)$/, "loc4cShelf"],
+    [/^loc-fridge-4c-door-(\d+)$/, "loc4cDoor"],
+    [/^loc-freezer-20-shelf-(\d+)$/, "loc20Shelf"],
+    [/^loc-freezer-80-shelf-(\d+)$/, "loc80Shelf"],
+    [/^loc-cabinet-1-shelf-(\d+)$/, "locCabinet1"],
+    [/^loc-cabinet-2-shelf-(\d+)$/, "locCabinet2"],
+  ];
+  for (const [pattern, key] of patterns) {
+    const match = id?.match(pattern);
+    if (match) return t(key, { n: match[1] });
+  }
+  return fallback || t("unassigned");
+}
+
 function applyTranslations() {
   document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : "en";
   document.title = t("appTitle");
   els.languageToggle.textContent = t("languageToggle");
+  if (els.settingsLanguageToggle) els.settingsLanguageToggle.textContent = t("languageToggle");
 
   document.querySelectorAll("[data-i18n]").forEach((node) => {
     node.textContent = t(node.dataset.i18n);
@@ -305,6 +383,12 @@ function applyTranslations() {
   });
   if (currentUser) showApp();
   if (state.locations) render();
+}
+
+function switchView(view) {
+  activeView = view;
+  els.navTabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.viewTarget === view));
+  els.appViews.forEach((panel) => panel.classList.toggle("is-hidden", panel.dataset.view !== view));
 }
 
 async function api(path, options = {}) {
@@ -330,6 +414,7 @@ function showApp() {
   document.querySelectorAll(".app-only").forEach((item) => item.classList.remove("is-hidden"));
   els.currentUser.textContent = `${currentUser.name} · ${currentUser.role === "admin" ? t("admin") : t("member")}`;
   els.adminPanel.classList.toggle("is-hidden", currentUser.role !== "admin");
+  if (els.backupTools) els.backupTools.classList.toggle("is-hidden", currentUser.role !== "admin");
 }
 
 function showAuth() {
@@ -346,6 +431,7 @@ async function loadSession() {
     showApp();
     await refreshData();
     if (currentUser.role === "admin") await loadPendingUsers();
+    if (currentUser.role === "admin") await loadBackups();
   } catch {
     currentUser = null;
     showAuth();
@@ -395,7 +481,8 @@ function daysUntil(dateValue) {
 }
 
 function getLocationName(locationId) {
-  return state.locations.find((location) => location.id === locationId)?.name || t("unassigned");
+  const location = state.locations.find((item) => item.id === locationId);
+  return location ? locationLabel(location) : t("unassigned");
 }
 
 function reagentStatus(reagent) {
@@ -414,7 +501,7 @@ function isHazardous(reagent) {
 
 function renderLocationOptions() {
   const options = state.locations
-    .map((location) => `<option value="${location.id}">${escapeHtml(location.name)}</option>`)
+    .map((location) => `<option value="${location.id}">${escapeHtml(locationLabel(location))}</option>`)
     .join("");
 
   els.reagentLocation.innerHTML = options;
@@ -425,7 +512,7 @@ function renderLocations() {
   els.locationList.innerHTML = state.locations
     .map((location) => {
       const count = state.reagents.filter((reagent) => reagent.locationId === location.id).length;
-      return `<span class="location-chip">${escapeHtml(location.name)} · ${t("speciesCount", { count })}</span>`;
+      return `<span class="location-chip">${escapeHtml(locationLabel(location))} · ${t("speciesCount", { count })}</span>`;
     })
     .join("");
 }
@@ -450,6 +537,92 @@ function renderSummary() {
   els.hazardCount.textContent = stats.hazard;
   els.locationCount.textContent = state.locations.length;
   els.lastUpdated.textContent = `${t("updated")} ${formatTime(Date.now())}`;
+}
+
+function renderTypeSummary() {
+  const types = ["solution", "powder", "solid", "consumable", "other"];
+  els.typeSummary.innerHTML = types
+    .map((type) => {
+      const count = state.reagents.filter((reagent) => reagent.type === type).length;
+      return `
+        <button class="category-card" type="button" data-type-jump="${type}">
+          <span>${typeLabel(type)}</span>
+          <strong>${count}</strong>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function periodStart(value, mode) {
+  const date = new Date(value);
+  if (mode === "week") {
+    const day = date.getDay() || 7;
+    date.setDate(date.getDate() - day + 1);
+  } else {
+    date.setDate(1);
+  }
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function periodLabel(value, mode) {
+  const date = periodStart(value, mode);
+  if (mode === "week") {
+    const end = new Date(date);
+    end.setDate(end.getDate() + 6);
+    return `${formatDate(date.toISOString().slice(0, 10))} - ${formatDate(end.toISOString().slice(0, 10))}`;
+  }
+  return new Intl.DateTimeFormat(currentLanguage === "zh" ? "zh-CN" : "en-US", {
+    year: "numeric",
+    month: "long",
+  }).format(date);
+}
+
+function renderReport(container, mode) {
+  const usage = state.history.filter((item) => item.action === "领用");
+  if (!usage.length) {
+    container.innerHTML = `<p class="empty-state">${t("reportEmpty")}</p>`;
+    return;
+  }
+
+  const groups = usage.reduce((acc, item) => {
+    const key = periodStart(item.createdAt, mode).toISOString();
+    if (!acc[key]) acc[key] = {};
+    const reagentKey = `${item.reagentName}__${item.unit}`;
+    acc[key][reagentKey] = acc[key][reagentKey] || { reagentName: item.reagentName, unit: item.unit, amount: 0 };
+    acc[key][reagentKey].amount += Number(item.amount);
+    return acc;
+  }, {});
+
+  els[mode === "week" ? "weeklyReport" : "monthlyReport"].innerHTML = Object.entries(groups)
+    .sort(([a], [b]) => new Date(b) - new Date(a))
+    .slice(0, 12)
+    .map(([period, items]) => {
+      const rows = Object.values(items)
+        .sort((a, b) => b.amount - a.amount)
+        .map(
+          (item) => `
+            <div class="report-row">
+              <span>${escapeHtml(item.reagentName)}</span>
+              <strong>${t("reportTotal")} ${formatNumber(item.amount)} ${escapeHtml(item.unit)}</strong>
+            </div>
+          `,
+        )
+        .join("");
+      return `
+        <article class="report-card">
+          <h3>${periodLabel(period, mode)}</h3>
+          ${rows}
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderReports() {
+  renderReport(els.weeklyReport, "week");
+  renderReport(els.monthlyReport, "month");
 }
 
 function getFilteredReagents() {
@@ -598,9 +771,31 @@ function render() {
   renderLocationOptions();
   renderLocations();
   renderSummary();
+  renderTypeSummary();
   renderBoard();
   renderAlerts();
   renderHistory();
+  renderReports();
+}
+
+async function loadBackups() {
+  if (currentUser?.role !== "admin" || !els.backupList) return;
+  const { backups } = await api("/api/admin/backups");
+  els.backupList.innerHTML = backups.length
+    ? backups
+        .map(
+          (backup) => `
+            <div class="list-item approval-item">
+              <div>
+                <strong>${escapeHtml(backup.label)}</strong>
+                <span class="muted">${formatTime(backup.createdAt)} · ${escapeHtml(backup.createdByName || "System")}</span>
+              </div>
+              <button class="small-button" type="button" data-restore-backup="${backup.id}">${t("restoreBackup")}</button>
+            </div>
+          `,
+        )
+        .join("")
+    : `<p class="empty-state">${t("noBackups")}</p>`;
 }
 
 async function loadPendingUsers() {
@@ -659,6 +854,7 @@ els.loginForm.addEventListener("submit", async (event) => {
     showApp();
     await refreshData();
     if (currentUser.role === "admin") await loadPendingUsers();
+    if (currentUser.role === "admin") await loadBackups();
   } catch (error) {
     setAuthMessage(error.message, true);
   }
@@ -693,6 +889,18 @@ els.pendingUsers.addEventListener("click", async (event) => {
   if (!button) return;
   await api(`/api/admin/users/${button.dataset.approveUser}/approve`, { method: "POST", body: "{}" });
   await loadPendingUsers();
+});
+
+els.navTabs.forEach((tab) => {
+  tab.addEventListener("click", () => switchView(tab.dataset.viewTarget));
+});
+
+els.typeSummary.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-type-jump]");
+  if (!button) return;
+  els.typeFilter.value = button.dataset.typeJump;
+  switchView("reagents");
+  renderBoard();
 });
 
 els.locationForm.addEventListener("submit", async (event) => {
@@ -763,15 +971,38 @@ els.resetBtn.addEventListener("click", async () => {
   if (!confirmed) return;
   await api("/api/reset", { method: "POST", body: "{}" });
   await refreshData();
+  await loadBackups();
 });
 
-els.languageToggle.addEventListener("click", () => {
+async function changeLanguage() {
   currentLanguage = currentLanguage === "zh" ? "en" : "zh";
   localStorage.setItem(LANGUAGE_KEY, currentLanguage);
   applyTranslations();
   if (currentUser?.role === "admin") loadPendingUsers();
+  if (currentUser?.role === "admin") loadBackups();
+}
+
+els.languageToggle.addEventListener("click", changeLanguage);
+els.settingsLanguageToggle.addEventListener("click", changeLanguage);
+
+els.createBackupBtn.addEventListener("click", async () => {
+  await api("/api/admin/backups", {
+    method: "POST",
+    body: JSON.stringify({ label: t("createBackup") }),
+  });
+  await loadBackups();
+});
+
+els.backupList.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-restore-backup]");
+  if (!button) return;
+  if (!confirm(t("confirmRestore"))) return;
+  await api(`/api/admin/backups/${button.dataset.restoreBackup}/restore`, { method: "POST", body: "{}" });
+  await refreshData();
+  await loadBackups();
 });
 
 applyTranslations();
+switchView(activeView);
 showAuth();
 loadSession();

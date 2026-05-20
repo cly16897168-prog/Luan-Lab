@@ -7,10 +7,12 @@ const { URL } = require("node:url");
 const PORT = Number(process.env.PORT || 4173);
 const DATA_DIR = path.join(__dirname, "data");
 const DB_PATH = path.join(DATA_DIR, "db.json");
+const BACKUP_DIR = path.join(DATA_DIR, "backups");
 const DATABASE_URL = process.env.DATABASE_URL;
 const PUBLIC_FILES = new Set(["/", "/index.html", "/styles.css", "/app.js"]);
 const sessions = new Map();
 let pgPool = null;
+const LEGACY_DEFAULT_LOCATION_IDS = new Set(["loc-organic", "loc-cold", "loc-hazard", "loc-balance"]);
 
 const defaultAdmin = {
   name: process.env.ADMIN_NAME || "实验室管理员",
@@ -20,10 +22,21 @@ const defaultAdmin = {
 
 function defaultLocations() {
   return [
-    { id: "loc-organic", name: "有机试剂柜" },
-    { id: "loc-cold", name: "4摄氏度冰箱" },
-    { id: "loc-hazard", name: "危化品柜" },
+    ...Array.from({ length: 4 }, (_, index) => ({ id: `loc-fridge-4c-shelf-${index + 1}`, name: `4C fridge shelf ${index + 1}` })),
+    ...Array.from({ length: 4 }, (_, index) => ({ id: `loc-fridge-4c-door-${index + 1}`, name: `4C fridge door shelf ${index + 1}` })),
+    ...Array.from({ length: 4 }, (_, index) => ({ id: `loc-freezer-20-shelf-${index + 1}`, name: `-20C freezer shelf ${index + 1}` })),
+    ...Array.from({ length: 4 }, (_, index) => ({ id: `loc-freezer-80-shelf-${index + 1}`, name: `-80C freezer shelf ${index + 1}` })),
+    ...Array.from({ length: 4 }, (_, index) => ({ id: `loc-cabinet-1-shelf-${index + 1}`, name: `Storage cabinet 1 shelf ${index + 1}` })),
+    ...Array.from({ length: 4 }, (_, index) => ({ id: `loc-cabinet-2-shelf-${index + 1}`, name: `Storage cabinet 2 shelf ${index + 1}` })),
   ];
+}
+
+function mergeDefaultLocations(locations = []) {
+  const existing = new Map(locations.filter((location) => !LEGACY_DEFAULT_LOCATION_IDS.has(location.id)).map((location) => [location.id, location]));
+  for (const location of defaultLocations()) {
+    if (!existing.has(location.id)) existing.set(location.id, location);
+  }
+  return [...existing.values()];
 }
 
 function emptyDb() {
@@ -107,6 +120,15 @@ async function initStorage() {
       actor_name TEXT,
       created_at BIGINT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS backups (
+      id TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      snapshot JSONB NOT NULL,
+      created_at BIGINT NOT NULL,
+      created_by TEXT,
+      created_by_name TEXT
+    );
   `);
 }
 
@@ -119,7 +141,7 @@ async function readDb() {
     return {
       ...emptyDb(),
       ...db,
-      locations: db.locations?.length ? db.locations : defaultLocations(),
+      locations: mergeDefaultLocations(db.locations?.length ? db.locations : defaultLocations()),
       users: db.users || [],
       reagents: db.reagents || [],
       history: db.history || [],
@@ -134,6 +156,91 @@ async function writeDb(db) {
 
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2));
+}
+
+function inventorySnapshot(db) {
+  return {
+    locations: db.locations,
+    reagents: db.reagents,
+    history: db.history,
+  };
+}
+
+async function createBackup(db, user, label = "Manual backup") {
+  const backup = {
+    id: createId("backup"),
+    label,
+    snapshot: inventorySnapshot(db),
+    createdAt: Date.now(),
+    createdBy: user?.id,
+    createdByName: user?.name || "System",
+  };
+
+  if (pgPool) {
+    await pgPool.query(
+      `INSERT INTO backups (id, label, snapshot, created_at, created_by, created_by_name)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [backup.id, backup.label, JSON.stringify(backup.snapshot), backup.createdAt, backup.createdBy || null, backup.createdByName],
+    );
+    return backup;
+  }
+
+  await fs.mkdir(BACKUP_DIR, { recursive: true });
+  await fs.writeFile(path.join(BACKUP_DIR, `${backup.id}.json`), JSON.stringify(backup, null, 2));
+  return backup;
+}
+
+async function listBackups() {
+  if (pgPool) {
+    const result = await pgPool.query("SELECT id, label, created_at, created_by_name FROM backups ORDER BY created_at DESC LIMIT 30");
+    return result.rows.map((row) => ({
+      id: row.id,
+      label: row.label,
+      createdAt: Number(row.created_at),
+      createdByName: row.created_by_name || "System",
+    }));
+  }
+
+  try {
+    const files = await fs.readdir(BACKUP_DIR);
+    const backups = await Promise.all(
+      files
+        .filter((file) => file.endsWith(".json"))
+        .map(async (file) => JSON.parse(await fs.readFile(path.join(BACKUP_DIR, file), "utf8"))),
+    );
+    return backups
+      .map((backup) => ({
+        id: backup.id,
+        label: backup.label,
+        createdAt: backup.createdAt,
+        createdByName: backup.createdByName || "System",
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 30);
+  } catch {
+    return [];
+  }
+}
+
+async function readBackup(backupId) {
+  if (pgPool) {
+    const result = await pgPool.query("SELECT * FROM backups WHERE id = $1", [backupId]);
+    const row = result.rows[0];
+    return row
+      ? {
+          id: row.id,
+          label: row.label,
+          snapshot: row.snapshot,
+          createdAt: Number(row.created_at),
+        }
+      : null;
+  }
+
+  try {
+    return JSON.parse(await fs.readFile(path.join(BACKUP_DIR, `${backupId}.json`), "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 async function readPgDb() {
@@ -156,7 +263,7 @@ async function readPgDb() {
       approvedAt: row.approved_at == null ? undefined : Number(row.approved_at),
       approvedBy: row.approved_by || undefined,
     })),
-    locations: locationsResult.rows.length ? locationsResult.rows.map((row) => ({ id: row.id, name: row.name })) : defaultLocations(),
+    locations: mergeDefaultLocations(locationsResult.rows.length ? locationsResult.rows.map((row) => ({ id: row.id, name: row.name })) : defaultLocations()),
     reagents: reagentsResult.rows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -378,12 +485,7 @@ function getDateOffset(days) {
 
 function demoData() {
   return {
-    locations: [
-      { id: "loc-organic", name: "有机试剂柜" },
-      { id: "loc-cold", name: "4摄氏度冰箱" },
-      { id: "loc-hazard", name: "危化品柜" },
-      { id: "loc-balance", name: "天平室干燥柜" },
-    ],
+    locations: defaultLocations(),
     reagents: [
       {
         id: "reagent-ethanol",
@@ -398,7 +500,7 @@ function demoData() {
         threshold: 500,
         receivedDate: getDateOffset(-45),
         expiryDate: getDateOffset(180),
-        locationId: "loc-hazard",
+        locationId: "loc-cabinet-1-shelf-1",
         risk: "flammable",
         owner: "陈老师",
         note: "开封后请记录领用量",
@@ -417,7 +519,7 @@ function demoData() {
         threshold: 0.5,
         receivedDate: getDateOffset(-80),
         expiryDate: getDateOffset(18),
-        locationId: "loc-hazard",
+        locationId: "loc-cabinet-2-shelf-1",
         risk: "corrosive",
         owner: "李博士",
         note: "需佩戴护目镜和耐酸手套",
@@ -436,7 +538,7 @@ function demoData() {
         threshold: 2,
         receivedDate: getDateOffset(-10),
         expiryDate: getDateOffset(9),
-        locationId: "loc-cold",
+        locationId: "loc-fridge-4c-shelf-1",
         risk: "low",
         owner: "王同学",
         note: "细胞房专用",
@@ -506,6 +608,34 @@ async function handleApi(req, res, pathname) {
     const admin = requireAdmin(req, res, db);
     if (!admin) return;
     return send(res, 200, { users: db.users.map(publicUser) });
+  }
+
+  if (req.method === "GET" && pathname === "/api/admin/backups") {
+    const admin = requireAdmin(req, res, db);
+    if (!admin) return;
+    return send(res, 200, { backups: await listBackups() });
+  }
+
+  if (req.method === "POST" && pathname === "/api/admin/backups") {
+    const admin = requireAdmin(req, res, db);
+    if (!admin) return;
+    const body = await readJson(req);
+    const backup = await createBackup(db, admin, sanitizeText(body.label) || "Manual backup");
+    return send(res, 201, { backup });
+  }
+
+  const restoreMatch = pathname.match(/^\/api\/admin\/backups\/([^/]+)\/restore$/);
+  if (req.method === "POST" && restoreMatch) {
+    const admin = requireAdmin(req, res, db);
+    if (!admin) return;
+    const backup = await readBackup(restoreMatch[1]);
+    if (!backup) return sendError(res, 404, "备份不存在。");
+    await createBackup(db, admin, "Before restore");
+    db.locations = mergeDefaultLocations(backup.snapshot.locations || []);
+    db.reagents = backup.snapshot.reagents || [];
+    db.history = backup.snapshot.history || [];
+    await writeDb(db);
+    return send(res, 200, { ok: true });
   }
 
   const approveMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/approve$/);
@@ -597,6 +727,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === "POST" && pathname === "/api/seed") {
     const user = requireUser(req, res, db);
     if (!user) return;
+    await createBackup(db, user, "Before loading demo");
     const demo = demoData();
     db.locations = demo.locations;
     db.reagents = demo.reagents;
@@ -608,6 +739,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === "POST" && pathname === "/api/reset") {
     const admin = requireAdmin(req, res, db);
     if (!admin) return;
+    await createBackup(db, admin, "Before clearing data");
     db.locations = defaultLocations();
     db.reagents = [];
     db.history = [];
